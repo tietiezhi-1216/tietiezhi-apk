@@ -14,6 +14,6 @@ interface ChatRepository {
     suspend fun addMessage(message: Message)
     suspend fun updateMessage(message: Message)
     suspend fun deleteMessage(id: String)
-    suspend fun sendMessage(chatId: String, content: String): Flow<String>
+    fun sendMessage(chatId: String, content: String): Flow<String>
     suspend fun stopGeneration()
 }

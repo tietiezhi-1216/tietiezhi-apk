@@ -11,9 +11,11 @@ import com.tietiezhi.apk.domain.model.Chat
 import com.tietiezhi.apk.domain.model.Message
 import com.tietiezhi.apk.domain.model.MessageRole
 import com.tietiezhi.apk.domain.repository.ChatRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -30,30 +32,28 @@ class ChatRepositoryImpl @Inject constructor(
     private val api: ChatApi
 ) : ChatRepository {
 
-    private var currentModel = "default"
-    private var streamingEnabled = true
-    private var serverUrl = "http://localhost:18178"
-    private var apiKey = ""
-    private var call: okhttp3.Call? = null
+    var currentModel = "default"
+    var streamingEnabled = true
+    var serverUrl = "http://localhost:18178"
+    var apiKey = ""
+    private var currentCall: okhttp3.Call? = null
 
     fun updateConfig(model: String, streaming: Boolean, server: String, key: String) {
         currentModel = model; streamingEnabled = streaming; serverUrl = server; apiKey = key
     }
 
-    override fun getAllChats(): Flow<List<Chat>> = chatDao.getAll().map { list -> list.map { it.toDomain() } }
+    override fun getAllChats(): Flow<List<Chat>> = chatDao.getAll().map { it.map { e -> e.toDomain() } }
     override suspend fun getChatById(id: String): Chat? = chatDao.getById(id)?.toDomain()
     override suspend fun createChat(chat: Chat): String { chatDao.insert(chat.toEntity()); return chat.id }
     override suspend fun updateChat(chat: Chat) = chatDao.update(chat.toEntity())
     override suspend fun deleteChat(id: String) = chatDao.deleteById(id)
-    override fun getMessages(chatId: String): Flow<List<Message>> = messageDao.getByChatId(chatId).map { list -> list.map { it.toDomain() } }
+    override fun getMessages(chatId: String): Flow<List<Message>> = messageDao.getByChatId(chatId).map { it.map { e -> e.toDomain() } }
     override suspend fun addMessage(message: Message) = messageDao.insert(message.toEntity())
     override suspend fun updateMessage(message: Message) = messageDao.update(message.toEntity())
     override suspend fun deleteMessage(id: String) = messageDao.deleteById(id)
 
-    override suspend fun sendMessage(chatId: String, content: String): Flow<String> = flow {
-        val userMsg = Message(chatId = chatId, role = MessageRole.USER, content = content)
-        addMessage(userMsg)
-
+    override fun sendMessage(chatId: String, content: String): Flow<String> = flow {
+        messageDao.insert(Message(chatId = chatId, role = MessageRole.USER, content = content).toEntity())
         val history = listOf(ChatMessageDto(role = "user", content = content))
 
         if (streamingEnabled) {
@@ -67,30 +67,33 @@ class ChatRepositoryImpl @Inject constructor(
                 .header("Authorization", "Bearer $apiKey")
                 .header("Content-Type", "application/json")
                 .post(body).build()
-            call = client.newCall(req)
-            val resp = call!!.execute()
-            val fullContent = StringBuilder()
-            resp.body?.byteStream()?.bufferedReader()?.use { reader ->
-                reader.forEachLine { line ->
-                    if (line.startsWith("data: ")) {
-                        val data = line.removePrefix("data: ").trim()
-                        if (data == "[DONE]") return@forEachLine
-                        try {
-                            val node = Json.decodeFromString<com.tietiezhi.apk.data.remote.dto.ChatResponse>(data)
-                            val delta = node.choices.firstOrNull()?.delta?.content
-                            if (delta != null) { fullContent.append(delta); emit(delta) }
-                        } catch (_: Exception) {}
+            val call = client.newCall(req)
+            currentCall = call
+            withContext(Dispatchers.IO) {
+                val resp = call.execute()
+                val fullContent = StringBuilder()
+                resp.body?.byteStream()?.bufferedReader()?.use { reader ->
+                    reader.forEachLine { line ->
+                        if (line.startsWith("data: ")) {
+                            val data = line.removePrefix("data: ").trim()
+                            if (data == "[DONE]") return@forEachLine
+                            try {
+                                val node = Json.decodeFromString<com.tietiezhi.apk.data.remote.dto.ChatResponse>(data)
+                                val delta = node.choices.firstOrNull()?.delta?.content
+                                if (delta != null) { fullContent.append(delta) }
+                            } catch (_: Exception) {}
+                        }
                     }
                 }
+                messageDao.insert(Message(chatId = chatId, role = MessageRole.ASSISTANT, content = fullContent.toString()).toEntity())
             }
-            addMessage(Message(chatId = chatId, role = MessageRole.ASSISTANT, content = fullContent.toString()))
         } else {
             val resp = api.chatCompletions(ChatRequest(model = currentModel, messages = history, stream = false))
             val reply = resp.choices.firstOrNull()?.message?.content ?: ""
-            addMessage(Message(chatId = chatId, role = MessageRole.ASSISTANT, content = reply))
+            messageDao.insert(Message(chatId = chatId, role = MessageRole.ASSISTANT, content = reply).toEntity())
             emit(reply)
         }
     }
 
-    override suspend fun stopGeneration() { call?.cancel(); call = null }
+    override suspend fun stopGeneration() { currentCall?.cancel(); currentCall = null }
 }

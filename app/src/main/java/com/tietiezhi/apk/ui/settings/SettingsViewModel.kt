@@ -4,9 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tietiezhi.apk.data.local.datastore.SettingsDataStore
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -22,9 +20,32 @@ data class SettingsState(
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(private val ds: SettingsDataStore) : ViewModel() {
-    val state = combine(ds.serverAddress, ds.apiKey, ds.modelName, ds.streaming, ds.themeMode, ds.localMode, ds.localPort) {
-        s, k, m, st, t, l, p -> SettingsState(s, k, m, st, t, l, p)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsState())
+    private val _state = MutableStateFlow(SettingsState())
+    val state: StateFlow<SettingsState> = _state.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            ds.serverAddress.collect { _state.update { s -> s.copy(serverAddress = it) } }
+        }
+        viewModelScope.launch {
+            ds.apiKey.collect { _state.update { s -> s.copy(apiKey = it) } }
+        }
+        viewModelScope.launch {
+            ds.modelName.collect { _state.update { s -> s.copy(modelName = it) } }
+        }
+        viewModelScope.launch {
+            ds.streaming.collect { _state.update { s -> s.copy(streaming = it) } }
+        }
+        viewModelScope.launch {
+            ds.themeMode.collect { _state.update { s -> s.copy(themeMode = it) } }
+        }
+        viewModelScope.launch {
+            ds.localMode.collect { _state.update { s -> s.copy(localMode = it) } }
+        }
+        viewModelScope.launch {
+            ds.localPort.collect { _state.update { s -> s.copy(localPort = it) } }
+        }
+    }
 
     fun setServer(v: String) { viewModelScope.launch { ds.setServer(v) } }
     fun setApiKey(v: String) { viewModelScope.launch { ds.setApiKey(v) } }
