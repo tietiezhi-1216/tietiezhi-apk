@@ -53,8 +53,14 @@ class ChatRepositoryImpl @Inject constructor(
     override suspend fun deleteMessage(id: String) = messageDao.deleteById(id)
 
     override fun sendMessage(chatId: String, content: String): Flow<String> = flow {
+        // 保存用户消息
         messageDao.insert(Message(chatId = chatId, role = MessageRole.USER, content = content).toEntity())
-        val history = listOf(ChatMessageDto(role = "user", content = content))
+
+        // 构建完整历史发送给服务端
+        val localMessages = messageDao.getByChatIdSync(chatId)
+        val history = localMessages.map { msg ->
+            ChatMessageDto(role = if (msg.role == "USER") "user" else "assistant", content = msg.content)
+        }
 
         if (streamingEnabled) {
             emit("")

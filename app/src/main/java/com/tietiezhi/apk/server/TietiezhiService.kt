@@ -60,15 +60,26 @@ class TietiezhiService : Service() {
 
         startForeground(NOTIFICATION_ID, notification)
 
-        // 从 jniLibs 复制二进制到可执行目录
         val binary = copyBinary()
         if (binary != null && binary.exists()) {
             try {
                 val dataDir = getDir("tietiezhi", MODE_PRIVATE)
                 val configDir = File(dataDir, "configs")
                 configDir.mkdirs()
+                
+                // 创建默认配置文件（如果不存在）
+                val configFile = File(configDir, "config.yaml")
+                if (!configFile.exists()) {
+                    configFile.writeText(createDefaultConfig(dataDir.absolutePath, port))
+                }
+                
+                // 创建数据目录
+                File(dataDir, "data/workspace").mkdirs()
+                File(dataDir, "data/sessions").mkdirs()
+                File(dataDir, "data/cron").mkdirs()
+                File(dataDir, "data/subagents").mkdirs()
 
-                ProcessBuilder(binary.absolutePath, "-c", File(configDir, "config.yaml").absolutePath)
+                ProcessBuilder(binary.absolutePath, "-c", configFile.absolutePath)
                     .apply {
                         environment()["PORT"] = port.toString()
                         redirectErrorStream(true)
@@ -80,6 +91,71 @@ class TietiezhiService : Service() {
             }
         }
     }
+
+    private fun createDefaultConfig(dataDir: String, port: Int): String = """
+# tietiezhi 默认配置
+server:
+  host: "0.0.0.0"
+  port: $port
+
+llm:
+  provider: "openai"
+  base_url: ""
+  api_key: ""
+  model: "default"
+
+agent:
+  max_tool_calls: 20
+  system_prompt: "你是一个有用的AI助手"
+  loop_detection: true
+
+channels:
+  feishu:
+    enabled: false
+
+memory:
+  type: "markdown"
+  path: "$dataDir/data/workspace"
+
+skills:
+  path: "$dataDir/data/workspace/skills"
+
+scheduler:
+  enabled: true
+  path: "$dataDir/data/cron"
+  exec_timeout: 300
+
+heartbeat:
+  enabled: true
+  interval: 30
+
+log:
+  level: "info"
+  format: "text"
+
+session:
+  max_history_turns: 20
+  persist_path: "$dataDir/data/sessions"
+  auto_save_seconds: 60
+
+hooks:
+  enabled: false
+  rules: []
+
+subagent:
+  enabled: true
+  path: "$dataDir/data/subagents"
+  timeout: 300
+
+approval:
+  enabled: false
+
+observability:
+  enabled: false
+
+sandbox:
+  enabled: false
+""".trimIndent()
 
     private fun copyBinary(): File? {
         return try {
@@ -94,9 +170,7 @@ class TietiezhiService : Service() {
             }
             dest
         } catch (e: Exception) {
-            // 从 jniLibs 方式不行，尝试直接执行
             try {
-                val abi = android.os.Build.SUPPORTED_ABIS.first()
                 val src = File(applicationInfo.nativeLibraryDir, "libtietiezhi-server.so")
                 if (src.exists()) {
                     val dest = File(filesDir, "tietiezhi-server")

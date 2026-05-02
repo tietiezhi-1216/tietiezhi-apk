@@ -17,7 +17,6 @@ class ChatViewModel @Inject constructor(
     private val settings: SettingsDataStore,
     private val repoImpl: ChatRepositoryImpl
 ) : ViewModel() {
-    // 默认使用 single 对话
     private val chatId: String = "default"
 
     val messages: StateFlow<List<Message>> = repo.getMessages(chatId)
@@ -33,10 +32,18 @@ class ChatViewModel @Inject constructor(
     val streamingContent: StateFlow<String> = _streamingContent.asStateFlow()
 
     init {
+        // 分别收集每个设置，避免 combine 阻塞
         viewModelScope.launch {
-            combine(settings.modelName, settings.streaming, settings.serverAddress, settings.apiKey) { m, s, u, k ->
-                repoImpl.updateConfig(m, s, u, k)
-            }.collect()
+            settings.modelName.collect { repoImpl.currentModel = it }
+        }
+        viewModelScope.launch {
+            settings.streaming.collect { repoImpl.streamingEnabled = it }
+        }
+        viewModelScope.launch {
+            settings.serverAddress.collect { repoImpl.serverUrl = it }
+        }
+        viewModelScope.launch {
+            settings.apiKey.collect { repoImpl.apiKey = it }
         }
     }
 

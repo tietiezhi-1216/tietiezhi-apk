@@ -9,6 +9,9 @@ interface MessageDao {
     @Query("SELECT * FROM messages WHERE chatId = :chatId ORDER BY timestamp ASC")
     fun getByChatId(chatId: String): Flow<List<MessageEntity>>
 
+    @Query("SELECT * FROM messages WHERE chatId = :chatId ORDER BY timestamp ASC")
+    suspend fun getByChatIdSync(chatId: String): List<MessageEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(msg: MessageEntity)
 
