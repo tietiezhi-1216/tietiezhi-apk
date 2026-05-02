@@ -1,0 +1,9 @@
+-keep class com.tietiezhi.apk.data.remote.dto.** { *; }
+-keep class com.tietiezhi.apk.data.local.db.entity.** { *; }
+-keepattributes *Annotation*, InnerClasses
+-dontnote kotlinx.serialization.AnnotationsKt
+-keepclassmembers class kotlinx.serialization.json.** { *** Companion; }
+-keepclasseswithmembers class kotlinx.serialization.json.** { kotlinx.serialization.KSerializer serializer(...); }
+-keep,includedescriptorclasses class com.tietiezhi.apk.**$$serializer { *; }
+-keepclassmembers class com.tietiezhi.apk.** { *** Companion; }
+-keepclasseswithmembers class com.tietiezhi.apk.** { kotlinx.serialization.KSerializer serializer(...); }
