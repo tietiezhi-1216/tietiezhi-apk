@@ -9,62 +9,62 @@ interface ManagementApi {
     suspend fun getConfig(): ConfigResponse
 
     @PUT("v1/config")
-    suspend fun updateConfig(@Body request: ConfigUpdateRequest): ConfigResponse
+    suspend fun updateConfig(@Body request: ConfigUpdateRequest): ApiResponse
 
     // Skills
     @GET("v1/skills")
-    suspend fun listSkills(): List<SkillInfo>
+    suspend fun listSkills(): SkillsResponse
 
     @POST("v1/skills/load")
-    suspend fun loadSkill(@Body request: SkillLoadRequest): Map<String, String>
+    suspend fun loadSkill(@Body request: SkillLoadRequest): ApiResponse
 
     // MCP
     @GET("v1/mcp")
-    suspend fun listMcpServers(): List<McpServer>
+    suspend fun listMcpServers(): McpResponse
 
     // Agents
     @GET("v1/agents")
-    suspend fun listAgents(): List<AgentInfo>
+    suspend fun listAgents(): AgentsResponse
 
     @DELETE("v1/agents/{id}")
-    suspend fun killAgent(@Path("id") id: String): Map<String, String>
+    suspend fun killAgent(@Path("id") id: String): ApiResponse
 
     // Hooks
     @GET("v1/hooks")
-    suspend fun listHooks(): List<HookRule>
+    suspend fun listHooks(): HooksResponse
 
     // Cron
     @GET("v1/cron")
-    suspend fun listCronJobs(): List<CronJob>
+    suspend fun listCronJobs(): CronListResponse
 
     @POST("v1/cron")
-    suspend fun createCronJob(@Body request: CronCreateRequest): CronJob
+    suspend fun createCronJob(@Body request: CronCreateRequest): ApiResponse
 
     @DELETE("v1/cron/{id}")
-    suspend fun deleteCronJob(@Path("id") id: String): Map<String, String>
+    suspend fun deleteCronJob(@Path("id") id: String): ApiResponse
 
     // Workspace
     @GET("v1/workspace")
-    suspend fun listWorkspace(@Query("path") path: String = ""): List<WorkspaceFile>
+    suspend fun listWorkspace(): WorkspaceResponse
 
     @GET("v1/workspace/file")
     suspend fun getFile(@Query("path") path: String): FileContent
 
     @PUT("v1/workspace/file")
-    suspend fun updateFile(@Body request: FileUpdateRequest): Map<String, String>
+    suspend fun updateFile(@Body request: FileUpdateRequest): ApiResponse
 
     // Status
     @GET("v1/status")
     suspend fun getStatus(): StatusResponse
 
-    // Models
-    @GET("v1/models")
-    suspend fun listModels(): Map<String, List<Map<String, String>>>
-
     // Sessions
     @GET("v1/sessions")
-    suspend fun listSessions(): List<SessionInfo>
-
-    @POST("v1/sessions")
-    suspend fun createSession(@Body request: Map<String, String>): SessionInfo
+    suspend fun listSessions(): SessionsResponse
 }
+
+// 通用 API 响应
+@kotlinx.serialization.Serializable
+data class ApiResponse(
+    val success: Boolean = false,
+    val message: String? = null
+)

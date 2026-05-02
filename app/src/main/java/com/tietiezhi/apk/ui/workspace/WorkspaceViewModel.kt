@@ -47,7 +47,13 @@ class WorkspaceViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {
-                val files = managementApi.listWorkspace(path)
+                val response = managementApi.listWorkspace()
+                // 过滤当前路径的文件
+                val files = if (path.isEmpty()) {
+                    response.files.filter { !it.path.contains("/") }
+                } else {
+                    response.files.filter { it.path.startsWith("$path/") && !it.path.substringAfter("$path/").contains("/") }
+                }
                 _uiState.update { it.copy(files = files, currentPath = path, isLoading = false) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = e.message) }

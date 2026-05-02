@@ -48,11 +48,11 @@ class FeaturesViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {
-                val skills = managementApi.listSkills()
-                val mcpServers = managementApi.listMcpServers()
-                val agents = managementApi.listAgents()
-                val hooks = managementApi.listHooks()
-                val cronJobs = managementApi.listCronJobs()
+                val skills = managementApi.listSkills().skills
+                val mcpServers = managementApi.listMcpServers().servers
+                val agents = managementApi.listAgents().agents
+                val hooks = managementApi.listHooks().rules
+                val cronJobs = managementApi.listCronJobs().jobs
                 _uiState.update { 
                     it.copy(
                         skills = skills,
@@ -109,7 +109,7 @@ class FeaturesViewModel @Inject constructor(
                     CronCreateRequest(
                         name = name,
                         message = message,
-                        kind = "interval",
+                        kind = "every",
                         every_ms = everyMs
                     )
                 )

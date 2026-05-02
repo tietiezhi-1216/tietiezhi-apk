@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.tietiezhi.apk.data.local.datastore.SettingsDataStore
 import com.tietiezhi.apk.data.remote.api.ManagementApi
 import com.tietiezhi.apk.data.remote.dto.management.ConfigUpdateRequest
-import com.tietiezhi.apk.data.remote.dto.management.FeaturesConfigUpdate
 import com.tietiezhi.apk.data.remote.dto.management.LlmConfigUpdate
 import com.tietiezhi.apk.server.TietiezhiService
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -117,13 +116,6 @@ class SettingsViewModel @Inject constructor(
                             api_key = _state.value.llmApiKey.ifBlank { null },
                             model = _state.value.llmModel.ifBlank { null },
                             cheap_model = _state.value.cheapModel.ifBlank { null }
-                        ),
-                        features = FeaturesConfigUpdate(
-                            cron = _state.value.featureCron,
-                            hook = _state.value.featureHook,
-                            agent = _state.value.featureAgent,
-                            sandbox = _state.value.featureSandbox,
-                            heartbeat = _state.value.featureHeartbeat
                         )
                     )
                 )

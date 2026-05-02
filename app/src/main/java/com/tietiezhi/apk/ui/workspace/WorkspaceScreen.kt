@@ -133,7 +133,7 @@ fun FileItem(file: WorkspaceFile, onClick: () -> Unit) {
                 if (!file.is_dir) {
                     Text(formatFileSize(file.size))
                 }
-                Text(dateFormat.format(Date(file.modified * 1000)))
+                Text(dateFormat.format(file.modified))
             }
         },
         leadingContent = { Icon(icon, contentDescription = null) },
