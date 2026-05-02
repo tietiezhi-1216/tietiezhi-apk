@@ -8,6 +8,7 @@ import com.tietiezhi.apk.data.local.db.dao.MessageDao
 import com.tietiezhi.apk.data.remote.api.ChatApi
 import com.tietiezhi.apk.data.remote.api.ManagementApi
 import com.tietiezhi.apk.data.remote.interceptor.AuthInterceptor
+import com.tietiezhi.apk.data.remote.interceptor.BaseUrlInterceptor
 import com.tietiezhi.apk.data.repository.ChatRepositoryImpl
 import com.tietiezhi.apk.domain.repository.ChatRepository
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -32,12 +33,16 @@ object AppModule {
     fun provideJson(): Json = Json { ignoreUnknownKeys = true; isLenient = true }
 
     @Provides @Singleton
+    fun provideBaseUrlInterceptor(): BaseUrlInterceptor = BaseUrlInterceptor()
+
+    @Provides @Singleton
     fun provideAuthInterceptor(): AuthInterceptor = AuthInterceptor()
 
     @Provides @Singleton
-    fun provideOkHttpClient(auth: AuthInterceptor): OkHttpClient {
+    fun provideOkHttpClient(auth: AuthInterceptor, baseUrl: BaseUrlInterceptor): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC }
         return OkHttpClient.Builder()
+            .addInterceptor(baseUrl)
             .addInterceptor(auth)
             .addInterceptor(logging)
             .connectTimeout(30, TimeUnit.SECONDS)
@@ -49,7 +54,7 @@ object AppModule {
     fun provideRetrofit(client: OkHttpClient, json: Json): Retrofit {
         val factory = json.asConverterFactory("application/json".toMediaType())
         return Retrofit.Builder()
-            .baseUrl("http://localhost:18178/")
+            .baseUrl("http://localhost:18178/")  // placeholder, BaseUrlInterceptor will override
             .client(client)
             .addConverterFactory(factory)
             .build()

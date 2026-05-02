@@ -8,6 +8,8 @@ import com.tietiezhi.apk.data.local.datastore.SettingsDataStore
 import com.tietiezhi.apk.data.remote.api.ManagementApi
 import com.tietiezhi.apk.data.remote.dto.management.ConfigUpdateRequest
 import com.tietiezhi.apk.data.remote.dto.management.LlmConfigUpdate
+import com.tietiezhi.apk.data.remote.interceptor.AuthInterceptor
+import com.tietiezhi.apk.data.remote.interceptor.BaseUrlInterceptor
 import com.tietiezhi.apk.server.TietiezhiService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -41,6 +43,8 @@ data class SettingsState(
 class SettingsViewModel @Inject constructor(
     private val ds: SettingsDataStore,
     private val managementApi: ManagementApi,
+    private val baseUrlInterceptor: BaseUrlInterceptor,
+    private val authInterceptor: AuthInterceptor,
     @ApplicationContext private val ctx: Context
 ) : ViewModel() {
     
@@ -53,7 +57,10 @@ class SettingsViewModel @Inject constructor(
     
     private fun observeSettings() {
         viewModelScope.launch { ds.serverAddress.collect { _state.update { s -> s.copy(serverAddress = it) } } }
-        viewModelScope.launch { ds.apiKey.collect { _state.update { s -> s.copy(apiKey = it) } } }
+        viewModelScope.launch { ds.apiKey.collect { 
+            _state.update { s -> s.copy(apiKey = it) }
+            authInterceptor.apiKey = it
+        } }
         viewModelScope.launch { ds.modelName.collect { _state.update { s -> s.copy(modelName = it) } } }
         viewModelScope.launch { ds.cheapModel.collect { _state.update { s -> s.copy(cheapModel = it) } } }
         viewModelScope.launch { ds.llmBaseUrl.collect { _state.update { s -> s.copy(llmBaseUrl = it) } } }
@@ -62,6 +69,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { ds.streaming.collect { _state.update { s -> s.copy(streaming = it) } } }
         viewModelScope.launch { ds.themeMode.collect { _state.update { s -> s.copy(themeMode = it) } } }
         viewModelScope.launch { ds.localMode.collect { _state.update { s -> s.copy(localMode = it) } } }
+        viewModelScope.launch { 
+            combine(ds.localPort, ds.localMode, ds.serverAddress) { port, local, addr ->
+                if (local) "http://localhost:$port/" else "$addr/"
+            }.collect { url ->
+                baseUrlInterceptor.baseUrl = url
+            }
+        }
         viewModelScope.launch { ds.localPort.collect { _state.update { s -> s.copy(localPort = it) } } }
         viewModelScope.launch { ds.featureCron.collect { _state.update { s -> s.copy(featureCron = it) } } }
         viewModelScope.launch { ds.featureHook.collect { _state.update { s -> s.copy(featureHook = it) } } }

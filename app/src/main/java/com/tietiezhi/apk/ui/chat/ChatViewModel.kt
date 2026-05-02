@@ -3,6 +3,8 @@ package com.tietiezhi.apk.ui.chat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tietiezhi.apk.data.local.datastore.SettingsDataStore
+import com.tietiezhi.apk.data.remote.interceptor.AuthInterceptor
+import com.tietiezhi.apk.data.remote.interceptor.BaseUrlInterceptor
 import com.tietiezhi.apk.data.repository.ChatRepositoryImpl
 import com.tietiezhi.apk.domain.model.Message
 import com.tietiezhi.apk.domain.repository.ChatRepository
@@ -15,7 +17,9 @@ import javax.inject.Inject
 class ChatViewModel @Inject constructor(
     private val repo: ChatRepository,
     private val settings: SettingsDataStore,
-    private val repoImpl: ChatRepositoryImpl
+    private val repoImpl: ChatRepositoryImpl,
+    private val baseUrlInterceptor: BaseUrlInterceptor,
+    private val authInterceptor: AuthInterceptor
 ) : ViewModel() {
     private val chatId: String = "default"
 
@@ -32,7 +36,6 @@ class ChatViewModel @Inject constructor(
     val streamingContent: StateFlow<String> = _streamingContent.asStateFlow()
 
     init {
-        // 分别收集每个设置，避免 combine 阻塞
         viewModelScope.launch {
             settings.modelName.collect { repoImpl.currentModel = it }
         }
@@ -40,10 +43,18 @@ class ChatViewModel @Inject constructor(
             settings.streaming.collect { repoImpl.streamingEnabled = it }
         }
         viewModelScope.launch {
-            settings.serverAddress.collect { repoImpl.serverUrl = it }
+            combine(settings.serverAddress, settings.localMode, settings.localPort) { addr, local, port ->
+                if (local) "http://localhost:$port" else addr
+            }.collect { url ->
+                repoImpl.serverUrl = url
+                baseUrlInterceptor.baseUrl = "$url/"
+            }
         }
         viewModelScope.launch {
-            settings.apiKey.collect { repoImpl.apiKey = it }
+            settings.apiKey.collect { key ->
+                repoImpl.apiKey = key
+                authInterceptor.apiKey = key
+            }
         }
     }
 
