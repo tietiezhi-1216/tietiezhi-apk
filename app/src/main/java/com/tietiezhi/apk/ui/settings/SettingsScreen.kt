@@ -262,7 +262,7 @@ fun SettingsScreen(
             Text("关于", style = MaterialTheme.typography.titleMedium)
             ListItem(
                 headlineContent = { Text("铁铁汁 AI Agent") },
-                supportingContent = { Text("版本 1.2.0") },
+                supportingContent = { Text("版本 1.2.4") },
                 leadingContent = { Icon(Icons.Default.Info, null) }
             )
             

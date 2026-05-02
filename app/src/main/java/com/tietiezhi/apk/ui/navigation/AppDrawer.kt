@@ -120,7 +120,7 @@ fun AppDrawer(
 
                 // 底部信息
                 Text(
-                    text = "v1.2.0",
+                    text = "v1.2.4",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.outline,
                     modifier = Modifier.padding(16.dp)

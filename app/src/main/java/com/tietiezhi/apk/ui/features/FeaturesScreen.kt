@@ -250,7 +250,7 @@ fun CronTab(
                     ListItem(
                         headlineContent = { Text(job.name) },
                         supportingContent = {
-                            Text("调度: ${job.schedule} | 运行次数: ${job.run_count}")
+                            Text("调度: ${job.schedule.kind}${job.schedule.expr?.let { " " + it } ?: ""}${job.schedule.every_ms?.let { " 每${it}ms" } ?: ""}${job.schedule.at?.let { " 于" + it } ?: ""} | 运行次数: ${job.run_count}")
                         },
                         leadingContent = {
                             Icon(
