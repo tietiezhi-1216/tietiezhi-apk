@@ -22,6 +22,7 @@ import java.util.*
 @Composable
 fun WorkspaceScreen(
     onFileClick: (String) -> Unit,
+    onBack: () -> Unit,
     vm: WorkspaceViewModel = hiltViewModel()
 ) {
     val uiState by vm.uiState.collectAsState()
@@ -44,10 +45,14 @@ fun WorkspaceScreen(
                     }
                 },
                 navigationIcon = {
-                    if (uiState.currentPath.isNotEmpty()) {
-                        IconButton(onClick = { vm.navigateUp() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回上级")
+                    IconButton(onClick = {
+                        if (uiState.currentPath.isNotEmpty()) {
+                            vm.navigateUp()
+                        } else {
+                            onBack()
                         }
+                    }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, if (uiState.currentPath.isEmpty()) "返回" else "返回上级")
                     }
                 },
                 actions = {

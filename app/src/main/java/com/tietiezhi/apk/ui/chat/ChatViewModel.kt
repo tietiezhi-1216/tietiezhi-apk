@@ -1,6 +1,5 @@
 package com.tietiezhi.apk.ui.chat
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tietiezhi.apk.data.local.datastore.SettingsDataStore
@@ -14,12 +13,12 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
-    savedState: SavedStateHandle,
     private val repo: ChatRepository,
     private val settings: SettingsDataStore,
     private val repoImpl: ChatRepositoryImpl
 ) : ViewModel() {
-    private val chatId: String = savedState["chatId"] ?: ""
+    // 默认使用 single 对话
+    private val chatId: String = "default"
 
     val messages: StateFlow<List<Message>> = repo.getMessages(chatId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

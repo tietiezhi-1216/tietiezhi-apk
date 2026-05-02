@@ -19,7 +19,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = hiltViewModel()) {
+fun SettingsScreen(
+    onBack: () -> Unit,
+    vm: SettingsViewModel = hiltViewModel()
+) {
     val state by vm.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var expandedLLM by remember { mutableStateOf(false) }
@@ -36,7 +39,11 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = hiltViewModel()) 
         topBar = {
             TopAppBar(
                 title = { Text("设置") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") } }
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回")
+                    }
+                }
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -255,7 +262,7 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = hiltViewModel()) 
             Text("关于", style = MaterialTheme.typography.titleMedium)
             ListItem(
                 headlineContent = { Text("铁铁汁 AI Agent") },
-                supportingContent = { Text("版本 1.1.0") },
+                supportingContent = { Text("版本 1.2.0") },
                 leadingContent = { Icon(Icons.Default.Info, null) }
             )
             

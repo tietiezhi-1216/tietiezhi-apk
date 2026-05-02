@@ -5,7 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -19,7 +19,10 @@ import com.tietiezhi.apk.ui.chat.components.StreamingIndicator
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatScreen(onBack: () -> Unit, vm: ChatViewModel = hiltViewModel()) {
+fun ChatScreen(
+    onMenuClick: () -> Unit,
+    vm: ChatViewModel = hiltViewModel()
+) {
     val messages by vm.messages.collectAsState()
     val inputText by vm.inputText.collectAsState()
     val isGenerating by vm.isGenerating.collectAsState()
@@ -33,8 +36,12 @@ fun ChatScreen(onBack: () -> Unit, vm: ChatViewModel = hiltViewModel()) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("对话") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") } }
+                title = { Text("铁铁汁") },
+                navigationIcon = {
+                    IconButton(onClick = onMenuClick) {
+                        Icon(Icons.Default.Menu, "菜单")
+                    }
+                }
             )
         },
         bottomBar = {

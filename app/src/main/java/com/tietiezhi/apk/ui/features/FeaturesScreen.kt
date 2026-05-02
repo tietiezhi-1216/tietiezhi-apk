@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,9 +16,13 @@ import com.tietiezhi.apk.data.remote.dto.management.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FeaturesScreen(vm: FeaturesViewModel = hiltViewModel()) {
+fun FeaturesScreen(
+    onBack: () -> Unit,
+    initialTab: Int = 0,
+    vm: FeaturesViewModel = hiltViewModel()
+) {
     val uiState by vm.uiState.collectAsState()
-    var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedTab by remember { mutableIntStateOf(initialTab) }
     val tabs = listOf("技能", "MCP", "代理", "钩子", "定时")
     
     LaunchedEffect(Unit) { vm.loadAll() }
@@ -25,7 +30,12 @@ fun FeaturesScreen(vm: FeaturesViewModel = hiltViewModel()) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("功能") },
+                title = { Text(tabs[selectedTab]) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回")
+                    }
+                },
                 actions = {
                     IconButton(onClick = { vm.loadAll() }) {
                         Icon(Icons.Default.Refresh, "刷新")
@@ -62,7 +72,6 @@ fun FeaturesScreen(vm: FeaturesViewModel = hiltViewModel()) {
         
         uiState.error?.let { error ->
             LaunchedEffect(error) {
-                // Show error and clear
                 vm.clearError()
             }
         }
@@ -228,8 +237,8 @@ fun CronTab(
         )
     }
     
-    Scaffold { padding ->
-        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
             if (jobs.isEmpty()) {
                 item {
                     Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
@@ -261,13 +270,13 @@ fun CronTab(
             }
         }
         
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
-            FloatingActionButton(
-                onClick = { showDialog = true },
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Icon(Icons.Default.Add, "添加定时任务")
-            }
+        FloatingActionButton(
+            onClick = { showDialog = true },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+        ) {
+            Icon(Icons.Default.Add, "添加定时任务")
         }
     }
 }

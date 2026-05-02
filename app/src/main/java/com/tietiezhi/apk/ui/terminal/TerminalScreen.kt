@@ -1,6 +1,5 @@
 package com.tietiezhi.apk.ui.terminal
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -9,6 +8,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.*
@@ -24,7 +24,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TerminalScreen(vm: TerminalViewModel = hiltViewModel()) {
+fun TerminalScreen(
+    onBack: () -> Unit,
+    vm: TerminalViewModel = hiltViewModel()
+) {
     val uiState by vm.uiState.collectAsState()
     var commandInput by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
@@ -43,6 +46,11 @@ fun TerminalScreen(vm: TerminalViewModel = hiltViewModel()) {
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("终端")
                 }},
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回")
+                    }
+                },
                 actions = {
                     IconButton(onClick = { vm.clearOutput() }) {
                         Icon(Icons.Default.Clear, "清空")
@@ -99,7 +107,7 @@ fun TerminalScreen(vm: TerminalViewModel = hiltViewModel()) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "\$ ",
+                        "$ ", 
                         style = TextStyle(
                             fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
                             fontSize = 14.sp
