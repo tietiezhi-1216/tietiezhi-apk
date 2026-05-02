@@ -6,6 +6,7 @@ import com.tietiezhi.apk.data.local.db.AppDatabase
 import com.tietiezhi.apk.data.local.db.dao.ChatDao
 import com.tietiezhi.apk.data.local.db.dao.MessageDao
 import com.tietiezhi.apk.data.remote.api.ChatApi
+import com.tietiezhi.apk.data.remote.api.ManagementApi
 import com.tietiezhi.apk.data.remote.interceptor.AuthInterceptor
 import com.tietiezhi.apk.data.repository.ChatRepositoryImpl
 import com.tietiezhi.apk.domain.repository.ChatRepository
@@ -56,6 +57,9 @@ object AppModule {
 
     @Provides @Singleton
     fun provideChatApi(retrofit: Retrofit): ChatApi = retrofit.create(ChatApi::class.java)
+
+    @Provides @Singleton
+    fun provideManagementApi(retrofit: Retrofit): ManagementApi = retrofit.create(ManagementApi::class.java)
 
     @Provides @Singleton
     fun provideDatabase(@ApplicationContext ctx: Context): AppDatabase =

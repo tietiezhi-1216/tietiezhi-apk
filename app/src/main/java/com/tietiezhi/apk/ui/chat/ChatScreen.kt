@@ -32,18 +32,33 @@ fun ChatScreen(onBack: () -> Unit, vm: ChatViewModel = hiltViewModel()) {
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("对话") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") } })
+            TopAppBar(
+                title = { Text("对话") },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") } }
+            )
         },
         bottomBar = {
-            ChatInput(value = inputText, onValueChange = vm::updateInput,
-                onSend = vm::sendMessage, isGenerating = isGenerating, onStop = vm::stopGeneration)
+            ChatInput(
+                value = inputText,
+                onValueChange = vm::updateInput,
+                onSend = vm::sendMessage,
+                isGenerating = isGenerating,
+                onStop = vm::stopGeneration
+            )
         }
     ) { padding ->
-        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding), state = listState, contentPadding = PaddingValues(vertical = 8.dp)) {
-            items(messages, key = { it.id }) { msg -> MessageBubble(message = msg) }
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            state = listState,
+            contentPadding = PaddingValues(vertical = 8.dp)
+        ) {
+            items(messages, key = { it.id }) { msg ->
+                MessageBubble(message = msg)
+            }
             if (isGenerating && streamingContent.isNotBlank()) {
-                item { MessageBubble(message = Message(chatId = "", role = MessageRole.ASSISTANT, content = streamingContent)) }
+                item {
+                    MessageBubble(message = Message(chatId = "", role = MessageRole.ASSISTANT, content = streamingContent))
+                }
             } else if (isGenerating) {
                 item { StreamingIndicator() }
             }

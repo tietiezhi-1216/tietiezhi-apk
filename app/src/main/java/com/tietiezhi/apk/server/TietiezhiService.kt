@@ -5,13 +5,12 @@ import android.content.Intent
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.tietiezhi.apk.MainActivity
-import com.tietiezhi.apk.R
 import java.io.File
-import java.io.OutputStream
 
 class TietiezhiService : Service() {
 
     private var process: Process? = null
+    private var currentPort: Int = 18178
 
     companion object {
         const val CHANNEL_ID = "tietiezhi_server"
@@ -26,8 +25,8 @@ class TietiezhiService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_START -> {
-                val port = intent.getIntExtra(EXTRA_PORT, 18178)
-                startServer(port)
+                currentPort = intent.getIntExtra(EXTRA_PORT, 18178)
+                startServer(currentPort)
             }
             ACTION_STOP -> stopServer()
         }
@@ -41,11 +40,22 @@ class TietiezhiService : Service() {
             .setContentText("本地服务运行中 - 端口 $port")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentIntent(
-                PendingIntent.getActivity(this, 0,
+                PendingIntent.getActivity(
+                    this, 0,
                     Intent(this, MainActivity::class.java),
                     PendingIntent.FLAG_IMMUTABLE
                 )
             )
+            .addAction(
+                android.R.drawable.ic_menu_close_clear_cancel,
+                "停止服务",
+                PendingIntent.getService(
+                    this, 0,
+                    Intent(this, TietiezhiService::class.java).apply { action = ACTION_STOP },
+                    PendingIntent.FLAG_IMMUTABLE
+                )
+            )
+            .setOngoing(true)
             .build()
 
         startForeground(NOTIFICATION_ID, notification)
@@ -76,7 +86,9 @@ class TietiezhiService : Service() {
             val dest = File(filesDir, "tietiezhi-server")
             if (!dest.exists()) {
                 assets.open("libtietiezhi-server.so").use { input ->
-                    dest.outputStream().use { output -> input.copyTo(output) }
+                    dest.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
                 }
                 dest.setExecutable(true)
             }
