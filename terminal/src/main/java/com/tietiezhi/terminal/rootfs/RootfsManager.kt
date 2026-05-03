@@ -42,14 +42,14 @@ class RootfsManager(private val context: Context) {
         get() = File(context.filesDir, "ubuntu")
     
     private val rootfsArchive: File
-        get() = File(context.filesDir, "ubuntu-24.04-arm64.tar.gz")
+        get() = File(context.filesDir, "ubuntu-24.04-arm64-with-server.tar.gz")
     
     companion object {
-        private const val ROOTFS_VERSION = "1.0.0"
+        private const val ROOTFS_VERSION = "2.0.0"
         private const val ROOTFS_ASSET_PATH = "rootfs"
-        private const val ROOTFS_ARCHIVE = "ubuntu-24.04-arm64.tar.gz"
+        private const val ROOTFS_ARCHIVE = "ubuntu-24.04-arm64-with-server.tar.gz"
         private const val ROOTFS_INFO = "rootfs-info.json"
-        private const val ROOTFS_DOWNLOAD_URL = "https://github.com/tietiezhi-1216/tietiezhi-apk/releases/download/rootfs-v1/ubuntu-24.04-arm64.tar.gz"
+        private const val ROOTFS_DOWNLOAD_URL = "https://github.com/tietiezhi-1216/tietiezhi-apk/releases/download/rootfs-v2/ubuntu-24.04-arm64-with-server.tar.gz"
         
         @Volatile
         private var instance: RootfsManager? = null
@@ -93,7 +93,7 @@ class RootfsManager(private val context: Context) {
                 val url = URL(ROOTFS_DOWNLOAD_URL)
                 val connection = url.openConnection() as HttpURLConnection
                 connection.connectTimeout = 30000
-                connection.readTimeout = 60000
+                connection.readTimeout = 120000
                 
                 val totalSize = connection.contentLength.toLong()
                 var downloadedSize = 0L
@@ -247,7 +247,7 @@ class RootfsManager(private val context: Context) {
     }
     
     private fun makeExecutable() {
-        val executableDirs = listOf("bin", "sbin", "usr/bin", "usr/sbin", "usr/libexec")
+        val executableDirs = listOf("bin", "sbin", "usr/bin", "usr/sbin", "usr/libexec", "opt/tietiezhi")
         for (dir in executableDirs) {
             val dirFile = File(rootfsDir, dir)
             if (dirFile.isDirectory) {

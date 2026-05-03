@@ -18,8 +18,11 @@ fun ChatInput(
     onSend: () -> Unit,
     isGenerating: Boolean,
     onStop: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
+    val placeholderText = if (enabled) "输入消息…" else "服务器未就绪"
+    
     Surface(modifier = modifier, tonalElevation = 3.dp) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp).imePadding(),
@@ -28,19 +31,24 @@ fun ChatInput(
         ) {
             OutlinedTextField(
                 value = value,
-                onValueChange = onValueChange,
+                onValueChange = if (enabled) onValueChange else { _ -> },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("输入消息…") },
+                placeholder = { Text(placeholderText) },
                 shape = RoundedCornerShape(24.dp),
                 maxLines = 4,
-                textStyle = MaterialTheme.typography.bodyMedium
+                textStyle = MaterialTheme.typography.bodyMedium,
+                enabled = enabled,
+                readOnly = !enabled
             )
             if (isGenerating) {
                 FilledIconButton(onClick = onStop) {
                     Icon(Icons.Default.Stop, contentDescription = "停止")
                 }
             } else {
-                FilledIconButton(onClick = onSend, enabled = value.isNotBlank()) {
+                FilledIconButton(
+                    onClick = onSend, 
+                    enabled = enabled && value.isNotBlank()
+                ) {
                     Icon(Icons.Default.Send, contentDescription = "发送")
                 }
             }

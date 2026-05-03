@@ -140,7 +140,7 @@ class ProotManager(private val context: Context) {
         // Build PRoot command arguments
         val prootArgs = buildProotArgs(rootfsPath)
         
-        // Build environment with LD_LIBRARY_PATH for libtalloc
+        // Build environment
         val env = buildEnvironment()
         
         // Create session with PRoot
@@ -158,10 +158,13 @@ class ProotManager(private val context: Context) {
     }
     
     /**
-     * Build PRoot command arguments
+     * Build PRoot command arguments - optimized for Ubuntu rootfs
      */
     private fun buildProotArgs(rootfsPath: String): List<String> {
         val args = mutableListOf<String>()
+        
+        // Simulate root user (critical for apt and many programs)
+        args.add("-0")
         
         // Root filesystem
         args.add("-r")
@@ -171,21 +174,17 @@ class ProotManager(private val context: Context) {
         args.add("-w")
         args.add("/root")
         
-        // Bind mount points
-        args.add("-b")
-        args.add("/proc:/proc")
+        // Link2symlink support - needed for hardlink handling
+        args.add("--link2symlink")
         
-        args.add("-b")
-        args.add("/sys:/sys")
+        // Kill proot when shell exits
+        args.add("--kill-on-exit")
         
+        // Bind /dev for urandom and other devices
         args.add("-b")
         args.add("/dev:/dev")
         
-        // Bind proot lib directory for libtalloc access from inside proot
-        args.add("-b")
-        args.add("${libDir.absolutePath}:/usr/lib/proot")
-        
-        // Bind Android data
+        // Bind Android data directory for config sharing
         args.add("-b")
         args.add("${context.filesDir.parent}:/android_data")
         
@@ -195,9 +194,6 @@ class ProotManager(private val context: Context) {
             args.add("-b")
             args.add("/sdcard:/sdcard")
         }
-        
-        // Disable seccomp (not supported in proot on Android)
-        args.add("--kill-on-exit")
         
         // Shell to execute inside PRoot
         args.add("/bin/bash")
@@ -218,9 +214,7 @@ class ProotManager(private val context: Context) {
             "LC_ALL" to "en_US.UTF-8",
             "SHELL" to "/bin/bash",
             "PATH" to "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-            // PRoot needs to find libtalloc
-            "LD_LIBRARY_PATH" to libDir.absolutePath,
-            // PRoot specific
+            // PRoot specific - disable seccomp (not supported on Android)
             "PROOT_NO_SECCOMP" to "1"
         )
     }

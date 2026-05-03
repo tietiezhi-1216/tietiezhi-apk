@@ -1,9 +1,9 @@
 {
   "name": "ubuntu-24.04-arm64",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "arch": "arm64",
-  "size": 106981734,
-  "sha256": "02cc87daf538a34de3b10e5aea0772dbd58d4dd59e97c4ea20bb3ce1f4f8bf49",
-  "url": "https://github.com/tietiezhi-1216/tietiezhi-apk/releases/download/rootfs-v1/ubuntu-24.04-arm64.tar.gz",
-  "description": "Ubuntu 24.04 LTS minimal rootfs for tietiezhi"
+  "size": 330000000,
+  "sha256": "f1e41db0f11c3c415094c79bc17bc3f225d9a469a7e2093178fb993e8828b061",
+  "url": "https://github.com/tietiezhi-1216/tietiezhi-apk/releases/download/rootfs-v2/ubuntu-24.04-arm64-with-server.tar.gz",
+  "description": "Ubuntu 24.04 LTS with complete second-stage, includes tietiezhi-server Go binary"
 }

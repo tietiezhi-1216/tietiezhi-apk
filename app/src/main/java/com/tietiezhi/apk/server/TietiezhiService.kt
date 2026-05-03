@@ -1,6 +1,7 @@
 package com.tietiezhi.apk.server
 
 import android.app.*
+import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
@@ -60,40 +61,90 @@ class TietiezhiService : Service() {
 
         startForeground(NOTIFICATION_ID, notification)
 
-        val binary = copyBinary()
-        if (binary != null && binary.exists()) {
-            try {
-                val dataDir = getDir("tietiezhi", MODE_PRIVATE)
-                val configDir = File(dataDir, "configs")
-                configDir.mkdirs()
-                
-                // 创建默认配置文件（如果不存在）
-                val configFile = File(configDir, "config.yaml")
-                if (!configFile.exists()) {
-                    configFile.writeText(createDefaultConfig(dataDir.absolutePath, port))
-                }
-                
-                // 创建数据目录
-                File(dataDir, "data/workspace").mkdirs()
-                File(dataDir, "data/sessions").mkdirs()
-                File(dataDir, "data/cron").mkdirs()
-                File(dataDir, "data/subagents").mkdirs()
+        // Start server via proot in Ubuntu environment
+        startServerViaProot(port)
+    }
 
-                ProcessBuilder(binary.absolutePath, "-c", configFile.absolutePath)
-                    .apply {
-                        environment()["PORT"] = port.toString()
-                        redirectErrorStream(true)
-                    }
-                    .start()
-                    .also { process = it }
-            } catch (e: Exception) {
-                e.printStackTrace()
+    /**
+     * Start the Go server via proot inside Ubuntu rootfs
+     */
+    private fun startServerViaProot(port: Int) {
+        try {
+            val prootBinary = File(filesDir, "proot/proot")
+            val rootfsPath = File(filesDir, "ubuntu").absolutePath
+            
+            if (!prootBinary.exists()) {
+                android.util.Log.e("TietiezhiService", "Proot binary not found")
+                return
             }
+            
+            if (!File(rootfsPath, "bin/bash").exists()) {
+                android.util.Log.e("TietiezhiService", "Rootfs not found or incomplete")
+                return
+            }
+            
+            // Update config with current port
+            updateServerConfig(port)
+            
+            // Server command to run inside proot
+            val serverCmd = "/opt/tietiezhi/tietiezhi-server -c /opt/tietiezhi/configs/config.yaml"
+            
+            // Build proot command
+            val prootArgs = listOf(
+                prootBinary.absolutePath,
+                "-0",                          // Simulate root user
+                "-r", rootfsPath,               // Root filesystem
+                "-w", "/root",                  // Working directory
+                "--link2symlink",              // Hardlink support
+                "--kill-on-exit",              // Kill when shell exits
+                "-b", "/dev:/dev",              // Bind /dev
+                "/bin/bash", "-c", serverCmd
+            )
+            
+            val processBuilder = ProcessBuilder(prootArgs)
+            processBuilder.environment().apply {
+                put("PROOT_NO_SECCOMP", "1")
+                put("HOME", "/root")
+                put("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")
+                put("LANG", "en_US.UTF-8")
+                put("LC_ALL", "en_US.UTF-8")
+            }
+            processBuilder.redirectErrorStream(true)
+            
+            process = processBuilder.start()
+            android.util.Log.i("TietiezhiService", "Server started via proot with PID: ${process?.hashCode()}")
+            
+        } catch (e: Exception) {
+            android.util.Log.e("TietiezhiService", "Failed to start server via proot", e)
+        }
+    }
+
+    /**
+     * Update server configuration in rootfs
+     */
+    private fun updateServerConfig(port: Int) {
+        try {
+            val configDir = File(filesDir, "ubuntu/opt/tietiezhi/configs")
+            configDir.mkdirs()
+            
+            val dataDir = File(filesDir, "tietiezhi")
+            dataDir.mkdirs()
+            
+            val configFile = File(configDir, "config.yaml")
+            configFile.writeText(createDefaultConfig(dataDir.absolutePath, port))
+            
+            // Create data directories
+            File(dataDir, "data/workspace").mkdirs()
+            File(dataDir, "data/sessions").mkdirs()
+            File(dataDir, "data/cron").mkdirs()
+            File(dataDir, "data/subagents").mkdirs()
+            
+        } catch (e: Exception) {
+            android.util.Log.e("TietiezhiService", "Failed to update config", e)
         }
     }
 
     private fun createDefaultConfig(dataDir: String, port: Int): String = """
-# tietiezhi 默认配置
 server:
   host: "0.0.0.0"
   port: $port
@@ -102,16 +153,12 @@ llm:
   provider: "openai"
   base_url: ""
   api_key: ""
-  model: "default"
+  model: ""
 
 agent:
   max_tool_calls: 20
   system_prompt: "你是一个有用的AI助手"
   loop_detection: true
-
-channels:
-  feishu:
-    enabled: false
 
 memory:
   type: "markdown"
@@ -138,51 +185,11 @@ session:
   persist_path: "$dataDir/data/sessions"
   auto_save_seconds: 60
 
-hooks:
-  enabled: false
-  rules: []
-
 subagent:
   enabled: true
   path: "$dataDir/data/subagents"
   timeout: 300
-
-approval:
-  enabled: false
-
-observability:
-  enabled: false
-
-sandbox:
-  enabled: false
 """.trimIndent()
-
-    private fun copyBinary(): File? {
-        return try {
-            val dest = File(filesDir, "tietiezhi-server")
-            if (!dest.exists()) {
-                assets.open("libtietiezhi-server.so").use { input ->
-                    dest.outputStream().use { output ->
-                        input.copyTo(output)
-                    }
-                }
-                dest.setExecutable(true)
-            }
-            dest
-        } catch (e: Exception) {
-            try {
-                val src = File(applicationInfo.nativeLibraryDir, "libtietiezhi-server.so")
-                if (src.exists()) {
-                    val dest = File(filesDir, "tietiezhi-server")
-                    if (!dest.exists()) {
-                        src.copyTo(dest)
-                        dest.setExecutable(true)
-                    }
-                    dest
-                } else null
-            } catch (_: Exception) { null }
-        }
-    }
 
     private fun stopServer() {
         process?.destroy()
