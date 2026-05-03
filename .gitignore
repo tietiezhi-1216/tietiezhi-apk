@@ -11,3 +11,7 @@ local.properties
 *.aab
 *.log
 .DS_Store
+*.apk
+*.apk.idsig
+*.idsig
+.kotlin/

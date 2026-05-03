@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "tietiezhi-apk"
 include(":app")
+include(":terminal")

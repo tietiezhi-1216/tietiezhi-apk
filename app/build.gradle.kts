@@ -90,4 +90,6 @@ dependencies {
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
 
+    // Terminal module
+    implementation(project(":terminal"))
 }
